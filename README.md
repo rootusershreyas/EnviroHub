@@ -1,14 +1,17 @@
 # EnviroHub
 
-A shared environment booking API built as one Rust application. This first
-milestone provides Member A's application foundation.
+A shared environment booking API built as one Rust application. The current
+milestone connects Member A's application foundation to PostgreSQL using SQLx.
 
 ## Run
 
-Install stable Rust, then run:
+Install stable Rust and Docker with Compose. From the repository root:
 
 ```sh
-cargo run
+# First setup only: copy the example if you do not already have a local .env.
+cp -n .env.example .env
+docker compose up -d --wait db
+cargo run --locked
 ```
 
 The server defaults to `127.0.0.1:3000`. Configure it with environment variables:
@@ -17,40 +20,56 @@ The server defaults to `127.0.0.1:3000`. Configure it with environment variables
 BIND_ADDR=0.0.0.0:3000 RUST_LOG=envirohub=info,tower_http=debug cargo run
 ```
 
-`.env.example` documents the settings; the application reads process environment
-variables and does not automatically load a `.env` file.
+The application loads `.env` using dotenvy; existing process environment variables
+take precedence. `.env` is ignored by Git. `DATABASE_URL` is required;
+`DATABASE_MAX_CONNECTIONS` defaults to 10 and must be greater than zero. The
+example credentials are for local development only. PostgreSQL is exposed on
+localhost port 5433.
 
 In another terminal:
 
 ```sh
 curl http://127.0.0.1:3000/health
 # {"status":"ok"}
+curl http://127.0.0.1:3000/ready
+# {"status":"ready"}
 ```
 
-`GET /health` is a process health check and requires no database. Logs are JSON.
-Ctrl+C or SIGTERM initiates graceful shutdown.
+Startup verifies the database connection before serving HTTP. `GET /health` is a
+process health check; after startup it stays independent of database availability.
+`GET /ready` runs `SELECT 1` with a two-second deadline and returns 503 if the
+database cannot be reached. Logs are JSON and do not print the database URL.
+Ctrl+C or SIGTERM initiates graceful shutdown, then closes the connection pool.
 
 ## Verify
 
 ```sh
-cargo fmt --check
-cargo clippy --all-targets -- -D warnings
-cargo test
+docker compose up -d --wait db
+export DATABASE_URL=postgres://envirohub:envirohub_dev@localhost:5433/envirohub
+cargo fmt --all -- --check
+cargo clippy --locked --all-targets -- -D warnings
+cargo test --locked
 ```
+
+Tests require an explicitly exported `DATABASE_URL`; they do not load `.env`.
+The database test executes `SELECT 1` and checks readiness with an open and closed
+pool. It does not change tables or stop PostgreSQL. For HTTP tests without a
+database, use `cargo test --locked --test health`.
 
 ## Integration boundaries
 
-- `src/app.rs` exposes `router()` for application startup and HTTP tests. Add
+- `src/app.rs` exposes `router(AppState)` for application startup and HTTP tests. Add
   feature routers under `/api/v1` here.
 - `src/error.rs` maps shared application errors to JSON containing `code` and
-  `message`, with HTTP 400, 404, 409, and 500 responses.
-- Member B adds SQLx, PostgreSQL configuration, migrations, and database readiness.
-  Coordinate adding a shared `AppState` containing the pool at that point.
+  `message`, with HTTP 400, 404, 409, 500, and 503 responses.
+- `src/db.rs` creates the SQLx pool; `src/state.rs` exposes it through
+  `AppState { pool }`. Reuse that pool in feature handlers.
+- Member B adds migrations and the project/task APIs next.
 - Member A adds programmers, teams, memberships, and lead rules next.
 - Member C adds environments and the booking lifecycle.
 
-Authentication, database access, and feature endpoints are not part of this
-foundation milestone.
+Authentication, migrations, and feature endpoints are not part of this
+connection milestone.
 
 ## Project context
 

@@ -1,14 +1,23 @@
-use envirohub::{app, config::Config, telemetry};
+use envirohub::{app, config::Config, db, state::AppState, telemetry};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    match dotenvy::dotenv() {
+        Ok(_) => {}
+        Err(dotenvy::Error::Io(error)) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => return Err(error.into()),
+    }
     telemetry::init().map_err(|error| -> Box<dyn std::error::Error> { error })?;
     let config = Config::from_env()?;
+    let pool = db::connect(&config.database_url, config.database_max_connections).await?;
+    tracing::info!("PostgreSQL connection established");
     let listener = tokio::net::TcpListener::bind(config.bind_addr).await?;
     tracing::info!(address = %listener.local_addr()?, "EnviroHub listening");
-    axum::serve(listener, app::router())
+    let result = axum::serve(listener, app::router(AppState { pool: pool.clone() }))
         .with_graceful_shutdown(shutdown_signal())
-        .await?;
+        .await;
+    pool.close().await;
+    result?;
     Ok(())
 }
 

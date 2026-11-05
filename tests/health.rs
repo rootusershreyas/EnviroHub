@@ -4,9 +4,17 @@ use axum::{
 };
 use tower::ServiceExt;
 
+fn app() -> axum::Router {
+    // These tests must not require a database: liveness is independent of readiness.
+    let pool = sqlx::postgres::PgPoolOptions::new()
+        .connect_lazy("postgres://unused:unused@127.0.0.1:1/unused")
+        .unwrap();
+    envirohub::app::router(envirohub::state::AppState { pool })
+}
+
 #[tokio::test]
 async fn health_returns_ok_json() {
-    let response = envirohub::app::router()
+    let response = app()
         .oneshot(
             Request::builder()
                 .uri("/health")
@@ -27,7 +35,7 @@ async fn health_returns_ok_json() {
 
 #[tokio::test]
 async fn unknown_route_returns_json_error() {
-    let response = envirohub::app::router()
+    let response = app()
         .oneshot(
             Request::builder()
                 .uri("/missing")
