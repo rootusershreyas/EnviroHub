@@ -172,22 +172,22 @@ Suggested branches: `chore/docker-ci`, `feat/environments`, `feat/bookings`.
 
 ## Branch and PR workflow
 
-Use `main` as the integrated project branch. Create a short branch for each task, rather than keeping all work in one long branch per person.
+Use `develop` as the integration branch. All three members create their feature branches from `develop` and target `develop` with their PRs. After combined testing and team review, merge `develop` into `main` for a release. Do not push feature work directly to `main`.
 
 ```bash
 git clone https://github.com/rootusershreyas/EnviroHub.git
 cd EnviroHub
-git switch main
-git pull --ff-only origin main
+git switch develop
+git pull --ff-only origin develop
 git switch -c feat/programmers
 # Implement your task, tests and documentation.
 git add <changed-files>
 git commit -m "feat(programmers): add registration and retrieval"
 git push -u origin feat/programmers
-gh pr create --base main --fill
+gh pr create --base develop --fill
 ```
 
-Another teammate reviews each PR before merge. Suggested review rotation: A reviews B, B reviews C, C reviews A. Keep `main` working, integrate regularly, and pull its latest changes before starting the next task.
+Another teammate reviews each PR before merge. Suggested review rotation: A reviews B, B reviews C, C reviews A. Keep `develop` working, integrate regularly, and pull its latest changes before starting the next task.
 
 ## Completion checklist
 
