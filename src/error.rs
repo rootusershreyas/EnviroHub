@@ -11,6 +11,7 @@ pub enum AppError {
     NotFound,
     Conflict(String),
     Internal,
+    Unavailable,
 }
 
 #[derive(Serialize)]
@@ -33,6 +34,11 @@ impl IntoResponse for AppError {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "internal_error",
                 "An internal error occurred".into(),
+            ),
+            Self::Unavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "service_unavailable",
+                "Database is temporarily unavailable".into(),
             ),
         };
         (status, Json(ErrorResponse { code, message })).into_response()
