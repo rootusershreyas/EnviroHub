@@ -1,8 +1,60 @@
 # EnviroHub
 
-A planned Rust REST API for booking shared staging environments, test servers, demo systems, and lab devices. Teams will be able to see who has reserved a resource, for which project, and for how long, without overlapping reservations.
+A shared environment booking API built as one Rust application. This first
+milestone provides Member A's application foundation.
 
-This is a three-person, two-week learning project based on the P6 assignment. **This repository contains the project plan only; implementation will be contributed through feature PRs to `main`.**
+## Run
+
+Install stable Rust, then run:
+
+```sh
+cargo run
+```
+
+The server defaults to `127.0.0.1:3000`. Configure it with environment variables:
+
+```sh
+BIND_ADDR=0.0.0.0:3000 RUST_LOG=envirohub=info,tower_http=debug cargo run
+```
+
+`.env.example` documents the settings; the application reads process environment
+variables and does not automatically load a `.env` file.
+
+In another terminal:
+
+```sh
+curl http://127.0.0.1:3000/health
+# {"status":"ok"}
+```
+
+`GET /health` is a process health check and requires no database. Logs are JSON.
+Ctrl+C or SIGTERM initiates graceful shutdown.
+
+## Verify
+
+```sh
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo test
+```
+
+## Integration boundaries
+
+- `src/app.rs` exposes `router()` for application startup and HTTP tests. Add
+  feature routers under `/api/v1` here.
+- `src/error.rs` maps shared application errors to JSON containing `code` and
+  `message`, with HTTP 400, 404, 409, and 500 responses.
+- Member B adds SQLx, PostgreSQL configuration, migrations, and database readiness.
+  Coordinate adding a shared `AppState` containing the pool at that point.
+- Member A adds programmers, teams, memberships, and lead rules next.
+- Member C adds environments and the booking lifecycle.
+
+Authentication, database access, and feature endpoints are not part of this
+foundation milestone.
+
+## Project context
+
+This is a three-person, two-week learning project based on P6. The application foundation above is implemented; feature work below remains planned unless checked off.
 
 ## Project scope
 
@@ -17,7 +69,7 @@ Implement the P6 programmer, team, project, and task APIs, then connect them to 
 
 The first version records reservations. Automatic provisioning, deployment access enforcement, notifications, recurring bookings, and a dashboard are outside this iteration. Authentication/authorization is deferred as instructed in P6.
 
-## Planned technology stack
+## Technology stack and planned integrations
 
 | Technology | Purpose |
 | --- | --- |
@@ -40,7 +92,7 @@ Assign names to A, B and C before implementation. The repository owner also take
 
 ### Contributor A — Programmers and teams
 
-- [ ] Initialize the Rust/Axum application, configuration, routing and shared error format in an early setup PR.
+- [x] Initialize the Rust/Axum application, configuration, routing and shared error format in an early setup PR.
 - [ ] Register, retrieve, list and update programmers; support deactivation.
 - [ ] Create, retrieve, list and update teams.
 - [ ] Add, list and remove team members; allow membership in multiple teams.
