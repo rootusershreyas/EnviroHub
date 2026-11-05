@@ -1,60 +1,6 @@
 # EnviroHub
 
-A shared environment booking API built as one Rust application. This first
-milestone provides Member A's application foundation.
-
-## Run
-
-Install stable Rust, then run:
-
-```sh
-cargo run
-```
-
-The server defaults to `127.0.0.1:3000`. Configure it with environment variables:
-
-```sh
-BIND_ADDR=0.0.0.0:3000 RUST_LOG=envirohub=info,tower_http=debug cargo run
-```
-
-`.env.example` documents the settings; the application reads process environment
-variables and does not automatically load a `.env` file.
-
-In another terminal:
-
-```sh
-curl http://127.0.0.1:3000/health
-# {"status":"ok"}
-```
-
-`GET /health` is a process health check and requires no database. Logs are JSON.
-Ctrl+C or SIGTERM initiates graceful shutdown.
-
-## Verify
-
-```sh
-cargo fmt --check
-cargo clippy --all-targets -- -D warnings
-cargo test
-```
-
-## Integration boundaries
-
-- `src/app.rs` exposes `router()` for application startup and HTTP tests. Add
-  feature routers under `/api/v1` here.
-- `src/error.rs` maps shared application errors to JSON containing `code` and
-  `message`, with HTTP 400, 404, 409, and 500 responses.
-- Member B adds SQLx, PostgreSQL configuration, migrations, and database readiness.
-  Coordinate adding a shared `AppState` containing the pool at that point.
-- Member A adds programmers, teams, memberships, and lead rules next.
-- Member C adds environments and the booking lifecycle.
-
-Authentication, database access, and feature endpoints are not part of this
-foundation milestone.
-
-## Project context
-
-This is a three-person, two-week learning project based on P6. The application foundation above is implemented; feature work below remains planned unless checked off.
+The application foundation is maintained on `develop`. This branch retains the project plan until the integrated application is ready for release.
 
 ## Project scope
 
@@ -92,7 +38,7 @@ Assign names to A, B and C before implementation. The repository owner also take
 
 ### Contributor A — Programmers and teams
 
-- [x] Initialize the Rust/Axum application, configuration, routing and shared error format in an early setup PR.
+- [ ] Initialize the Rust/Axum application, configuration, routing and shared error format in an early setup PR.
 - [ ] Register, retrieve, list and update programmers; support deactivation.
 - [ ] Create, retrieve, list and update teams.
 - [ ] Add, list and remove team members; allow membership in multiple teams.
@@ -153,22 +99,22 @@ Suggested branches: `chore/docker-ci`, `feat/environments`, `feat/bookings`.
 
 ## Branch and PR workflow
 
-Use `main` as the integrated project branch. Create a short branch for each task, rather than keeping all work in one long branch per person.
+Use `develop` as the integration branch. Member branches start from `develop` and feature PRs target `develop`. After combined testing and team review, merge `develop` into `main` for a release.
 
 ```bash
 git clone https://github.com/rootusershreyas/EnviroHub.git
 cd EnviroHub
-git switch main
-git pull --ff-only origin main
+git switch develop
+git pull --ff-only origin develop
 git switch -c feat/programmers
 # Implement your task, tests and documentation.
 git add <changed-files>
 git commit -m "feat(programmers): add registration and retrieval"
 git push -u origin feat/programmers
-gh pr create --base main --fill
+gh pr create --base develop --fill
 ```
 
-Another teammate reviews each PR before merge. Suggested review rotation: A reviews B, B reviews C, C reviews A. Keep `main` working, integrate regularly, and pull its latest changes before starting the next task.
+Another teammate reviews each PR before merge. Suggested review rotation: A reviews B, B reviews C, C reviews A. Keep `develop` working, integrate regularly, and pull its latest changes before starting the next task.
 
 ## Completion checklist
 
